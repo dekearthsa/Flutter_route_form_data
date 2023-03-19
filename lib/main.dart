@@ -290,9 +290,9 @@ class MyFormPage extends State<FormPage> {
                   TextFormField(
                       decoration: InputDecoration(labelText: "OnSaved"),
                       initialValue: '',
-                      onSaved: ((value) => setState(() {
-                        onsaveData = value!;
-                      })), // ต้องมีปุ่ม save เมื่อกดถึงจะแสดงค่า
+                      onSaved: ((value) => setState(() { // ต้องมีปุ่ม save เมื่อกดถึงจะแสดงค่า ค่า value จะต้องไม่เป็น null เพราะงั้งต้องใส่ ! ไว้หลัง value 
+                        onsaveData = value!;  // ใช้ setState สำหรับการอัพเดทค่าไป value ที่ได้จาก input ไปยัง ตัวแปล onsaveData ที่ประกาศไว้ 
+                      })), 
                     ),
                   ElevatedButton(
                     onPressed: () {
