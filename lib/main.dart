@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
+import 'package:syncfusion_flutter_charts/charts.dart';
+import 'chart/lineChart.dart';
+import 'chart/barChart.dart';
+import 'chart/pieChart.dart';
 
 void main() {
   runApp(const MyApp());
@@ -601,33 +606,363 @@ class ShowInfoPages extends StatelessWidget {
       ),
       body: Center(
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
+              margin: EdgeInsets.only(top: 10.0, bottom: 10.0),
               child: Text(description),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  child: Text("name: "),
-                ),
-                Container(
-                  child: Text(name),
-                )
-              ],
+            Container(
+              margin: EdgeInsets.only(top: 5.0, bottom: 5.0),
+              width: 100,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Container(
+                    child: Text(
+                      "Name: ",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Container(
+                    child: Text(name),
+                  ),
+                ],
+              ),
             ),
+            Container(
+              width: 100,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Container(
+                    child: Text("Gender: ",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  Container(
+                    child: Text(gender),
+                  )
+                ],
+              ),
+            ),
+            Container(
+              child: ElevatedButton(
+                child: Icon(Icons.arrow_forward),
+                onPressed: () => {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ApiFetchDataPage(
+                              title: "API page",
+                              description: "this is a API pages")))
+                },
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ApiFetchDataPage extends StatefulWidget {
+  final String title;
+  final String description;
+
+  const ApiFetchDataPage({required this.title, required this.description});
+
+  @override
+  MyApiFetchDataPage createState() => MyApiFetchDataPage();
+}
+
+class MyApiFetchDataPage extends State<ApiFetchDataPage> {
+  final _formKey = GlobalKey<FormState>();
+  final dio = Dio();
+  bool onLoading = false;
+  String setPostData = "";
+  String isError = "";
+  // List listData = [];
+  String id = "";
+  String data = "";
+  String rawData = "";
+
+  void fetchDataPost() async {
+    setState(() {
+      onLoading = true;
+    });
+
+    var setData = {
+      'data': setPostData,
+    };
+
+    // print(setPostData);
+
+    try {
+      var getfetchData =
+          await dio.post("http://localhost:5564/api/getdata", data: setData);
+      print(getfetchData.data);
+
+      setState(() {
+        if (getfetchData.statusCode == 200) {
+          id = getfetchData.data['id'].toString();
+          data = getfetchData.data['data'];
+          rawData = getfetchData.data['inputData'];
+          onLoading = false;
+          setPostData = '';
+          _formKey.currentState!.reset();
+          print("Save!");
+        } else if (getfetchData.statusCode == 403) {
+          isError = "invalid user!";
+          onLoading = false;
+          setPostData = '';
+          _formKey.currentState!.reset();
+          print("Error!");
+        } else if (getfetchData.statusCode == 500) {
+          isError = "Server not found.";
+          onLoading = false;
+          setPostData = '';
+          _formKey.currentState!.reset();
+          print("Error!");
+        } else {
+          isError = "Can't fetch data!";
+          onLoading = false;
+          setPostData = '';
+          _formKey.currentState!.reset();
+          print("Error!");
+        }
+      });
+    } catch (err) {
+      setState(() {
+        isError = "Server not found.";
+        onLoading = false;
+        setPostData = '';
+        _formKey.currentState!.reset();
+        print("Error!");
+      });
+    }
+  }
+
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Center(
+        child: Column(
+          children: [
+            Container(
+              margin: EdgeInsets.only(top: 50.0),
+              child: Text(
+                widget.description,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Container(
+                margin: EdgeInsets.only(bottom: 80.0, top: 50.0),
+                child: onLoading
+                    ? CircularProgressIndicator(
+                        strokeWidth: 2.0,
+                        valueColor: AlwaysStoppedAnimation(Colors.blueAccent),
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                child: Text("id: "),
+                              ),
+                              Container(
+                                child: Text(id),
+                              )
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                child: Text("API data: "),
+                              ),
+                              Container(
+                                child: Text(data),
+                              )
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                child: Text("Raw: "),
+                              ),
+                              Container(
+                                child: Text(rawData),
+                              )
+                            ],
+                          )
+                        ],
+                      )),
+            Container(
+              padding: EdgeInsets.all(25.0),
+              child: Form(
+                key: _formKey,
+                child: TextFormField(
+                  decoration: InputDecoration(
+                    labelText: "Input text",
+                    border: OutlineInputBorder(),
+                  ),
+                  initialValue: '',
+                  onSaved: ((value) => setState(
+                        () {
+                          setPostData = value!;
+                        },
+                      )),
+                ),
+              ),
+            ),
+            Container(
+                child: Text(
+              isError,
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+            )),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  child: Text("gender: "),
+                  margin: EdgeInsets.only(top: 30.0, right: 10.0),
+                  width: 100.0,
+                  height: 40.0,
+                  child: ElevatedButton(
+                    child: Icon(Icons.arrow_back),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
                 ),
                 Container(
-                  child: Text(gender),
-                )
+                  margin: EdgeInsets.only(top: 30.0, left: 10.0, right: 10.0),
+                  width: 100.0,
+                  height: 40.0,
+                  child: ElevatedButton(
+                    child: Text(
+                      "Fetch",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        _formKey.currentState!.save();
+                        fetchDataPost();
+                      }
+                    },
+                  ),
+                ),
+                Container(
+                  margin: EdgeInsets.only(top: 30.0, left: 10.0),
+                  width: 100.0,
+                  height: 40.9,
+                  child: ElevatedButton(
+                    child: Icon(Icons.arrow_forward),
+                    onPressed: () => {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChartPage(
+                              title: "Chart Page",
+                              description:
+                                  "The lib from chart is syncfusion_flutter_charts."),
+                        ),
+                      ),
+                    },
+                  ),
+                ),
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class ChartPage extends StatefulWidget {
+  final String title;
+  final String description;
+  const ChartPage({required this.title, required this.description});
+
+  @override
+  MyChagePage createState() => MyChagePage();
+}
+
+// class LineChartData {
+//   LineChartData(this.x, this.y);
+//   final String x;
+//   final double y;
+// }
+
+// class BarChartData{
+//   BarChartData(this.x, this.y);
+//   final String x;
+//   final double y;
+// }
+
+class MyChagePage extends State<ChartPage> {
+  // final List<LineChartData> dataLineChart = [
+  //   LineChartData('day1', 10),
+  //   LineChartData('day2', 20),
+  //   LineChartData('day3', 30),
+  //   LineChartData('day4', 25),
+  //   LineChartData('day5', 30)
+  //   ];
+
+  // final List<BarChartData> dataBarChart = [
+  //   BarChartData('Mon', 12.0),
+  //   BarChartData('Thu', 15.0),
+  //   BarChartData('Wen', 15.4),
+  //   BarChartData('Tue', 14.3),
+  //   BarChartData('Fri', 16.0),
+  // ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Center(
+        child: Container(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  margin: EdgeInsets.only(bottom: 50.0),
+                  child: Text(
+                    widget.description,
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      LineChartWidget(),
+                      BarChartWidget(),
+                      PieChartWidget(),
+                    ],
+                  ),
+                ),
+                Container(
+                  margin: EdgeInsets.only(top: 60.0),
+                  width: 100,
+                  child: ElevatedButton(
+                    child: Icon(Icons.arrow_back),
+                    onPressed: () => Navigator.pop(context),
+                    ),
+                )
+              ],
+            ),
+          ),
         ),
       ),
     );
