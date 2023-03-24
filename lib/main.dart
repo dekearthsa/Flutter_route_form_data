@@ -1,11 +1,17 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:mqtt_client/mqtt_client.dart';
+import 'package:mqtt_client/mqtt_server_client.dart';
+import 'mqtt/mqttMangement.dart';
 import 'chart/lineChart.dart';
 import 'chart/barChart.dart';
 import 'chart/pieChart.dart';
+import 'mqtt/mqttMangement.dart';
 
 void main() {
   runApp(const MyApp());
@@ -42,40 +48,46 @@ class MyHomePage extends StatelessWidget {
         title: Text(title),
       ),
       body: Center(
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Container(
-            margin: EdgeInsets.only(top: 30.0),
-            child: Text(
-              'Page 1',
-              style: TextStyle(fontWeight: FontWeight.bold),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              margin: EdgeInsets.only(top: 30.0),
+              child: Text(
+                'Page 1',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
-          ),
-          Container(
-            margin: EdgeInsets.only(left: 20.0, right: 20.0),
-            child: Text(description),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                margin: EdgeInsets.only(top: 25),
-                width: 100,
-                height: 40,
-                child: ElevatedButton(
+            Container(
+              margin: EdgeInsets.only(left: 20.0, right: 20.0),
+              child: Text(description),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  margin: EdgeInsets.only(top: 25),
+                  width: 100,
+                  height: 40,
+                  child: ElevatedButton(
                     onPressed: () => {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => Page2(
-                                      title: "page2",
-                                      description:
-                                          "this is page2 now we say hello world")))
-                        },
-                    child: const Icon(Icons.arrow_forward_ios)),
-              )
-            ],
-          )
-        ]),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Page2(
+                              title: "page2",
+                              description:
+                                  "this is page2 now we say hello world"),
+                        ),
+                      ),
+                    },
+                    child: const Icon(Icons.arrow_forward_ios),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
       // floatingActionButton: FloatingActionButton(
       //   onPressed: () => {
@@ -155,12 +167,14 @@ class MyPage2State extends State<Page2> {
                     child: Row(
                       children: [
                         Container(
-                            width: 100,
-                            height: 40,
-                            margin: EdgeInsets.only(right: 10),
-                            child: ElevatedButton(
-                                onPressed: () => {Navigator.pop(context)},
-                                child: const Icon(Icons.arrow_back_ios))),
+                          width: 100,
+                          height: 40,
+                          margin: EdgeInsets.only(right: 10),
+                          child: ElevatedButton(
+                            onPressed: () => {Navigator.pop(context)},
+                            child: const Icon(Icons.arrow_back_ios),
+                          ),
+                        ),
                         Container(
                           width: 100,
                           height: 40,
@@ -168,17 +182,19 @@ class MyPage2State extends State<Page2> {
                           child: ElevatedButton(
                             onPressed: () => {
                               Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => Page3(
-                                            title: "page3",
-                                            description:
-                                                "this is page3 now we say hello flutter.",
-                                          )))
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => Page3(
+                                    title: "page3",
+                                    description:
+                                        "this is page3 now we say hello flutter.",
+                                  ),
+                                ),
+                              )
                             },
                             child: const Icon(Icons.arrow_forward_ios),
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ),
@@ -218,12 +234,14 @@ class Page3 extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                      margin: EdgeInsets.only(top: 25, right: 10),
-                      width: 100,
-                      height: 40,
-                      child: ElevatedButton(
-                          onPressed: () => {Navigator.pop(context)},
-                          child: Icon(Icons.arrow_back_ios))),
+                    margin: EdgeInsets.only(top: 25, right: 10),
+                    width: 100,
+                    height: 40,
+                    child: ElevatedButton(
+                      onPressed: () => {Navigator.pop(context)},
+                      child: Icon(Icons.arrow_back_ios),
+                    ),
+                  ),
                   Container(
                     margin: EdgeInsets.only(top: 25, left: 10),
                     width: 100,
@@ -232,12 +250,14 @@ class Page3 extends StatelessWidget {
                       child: const Icon(Icons.arrow_forward_ios),
                       onPressed: () => {
                         Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => FormPage(
-                                      title: "Form-page",
-                                      description: "Form enter your infomation",
-                                    )))
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FormPage(
+                              title: "Form-page",
+                              description: "Form enter your infomation",
+                            ),
+                          ),
+                        ),
                       },
                     ),
                   )
@@ -281,14 +301,15 @@ class MyFormPage extends State<FormPage> {
             Container(
               padding: EdgeInsets.all(10.0),
               child: Form(
-                  child: TextFormField(
-                // เป็น input ที่จะรับเฉพาะ String
-                decoration: InputDecoration(labelText: "OnChanged"),
-                initialValue: "onChange", // ค่าเริ่มต้นของ input
-                onChanged: ((value) => setState(() {
-                      onChangedData = value!;
-                    })), // เป็นการ save ข้อมูล auto ทุกครั้งที่มีการกด keyboard ค่าของ form จะเปลี่ยนไป
-              )),
+                child: TextFormField(
+                  // เป็น input ที่จะรับเฉพาะ String
+                  decoration: InputDecoration(labelText: "OnChanged"),
+                  initialValue: "onChange", // ค่าเริ่มต้นของ input
+                  onChanged: ((value) => setState(() {
+                        onChangedData = value!;
+                      })), // เป็นการ save ข้อมูล auto ทุกครั้งที่มีการกด keyboard ค่าของ form จะเปลี่ยนไป
+                ),
+              ),
             ),
             Container(
               padding: EdgeInsets.all(10.0),
@@ -893,34 +914,8 @@ class ChartPage extends StatefulWidget {
   MyChagePage createState() => MyChagePage();
 }
 
-// class LineChartData {
-//   LineChartData(this.x, this.y);
-//   final String x;
-//   final double y;
-// }
-
-// class BarChartData{
-//   BarChartData(this.x, this.y);
-//   final String x;
-//   final double y;
-// }
 
 class MyChagePage extends State<ChartPage> {
-  // final List<LineChartData> dataLineChart = [
-  //   LineChartData('day1', 10),
-  //   LineChartData('day2', 20),
-  //   LineChartData('day3', 30),
-  //   LineChartData('day4', 25),
-  //   LineChartData('day5', 30)
-  //   ];
-
-  // final List<BarChartData> dataBarChart = [
-  //   BarChartData('Mon', 12.0),
-  //   BarChartData('Thu', 15.0),
-  //   BarChartData('Wen', 15.4),
-  //   BarChartData('Tue', 14.3),
-  //   BarChartData('Fri', 16.0),
-  // ];
 
   @override
   Widget build(BuildContext context) {
@@ -954,15 +949,115 @@ class MyChagePage extends State<ChartPage> {
                 ),
                 Container(
                   margin: EdgeInsets.only(top: 60.0),
-                  width: 100,
-                  child: ElevatedButton(
-                    child: Icon(Icons.arrow_back),
-                    onPressed: () => Navigator.pop(context),
-                    ),
-                )
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        margin: EdgeInsets.only(right: 10.0),
+                        child: ElevatedButton(
+                          child: Icon(Icons.arrow_back),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ),
+                      Container(
+                        margin: EdgeInsets.only(left: 10.0),
+                        child: ElevatedButton(
+                          child: Icon(Icons.arrow_forward),
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MqttPage(
+                                  title: "Mqtt Page",
+                                  description: "Data from hive mq"),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class MqttPage extends StatefulWidget {
+  final String title;
+  final String description;
+  const MqttPage({required this.title, required this.description});
+
+  @override
+  MyMqttPage createState() => MyMqttPage();
+}
+
+class MyMqttPage extends State<MqttPage> {
+  final List<String> arrayMsg = [];
+  final String subTopic = 'topic/sub_test';
+  
+  @override
+  void initState() {
+    super.initState();
+    var clientMq = mqttConnect();
+    clientMq.then((setClient) => {
+      setClient.subscribe(subTopic, MqttQos.atMostOnce),
+      setClient.updates!.listen((dynamic c) {
+        final recMess = c![0].payload as MqttPublishMessage;
+        final message = MqttPublishPayload.bytesToStringAsString(recMess.payload.message!);
+        // print('message mqtt widget => $message');
+        arrayMsg.add(message);
+      })
+    });
+  }
+
+  void debuging () {
+    print('array corrector =>  $arrayMsg');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              child: Text(
+                widget.description,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Container(),
+            Container(
+              margin: EdgeInsets.only(top: 30.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    margin: EdgeInsets.only(right: 10.0),
+                    child: ElevatedButton(
+                      child: Icon(Icons.arrow_back),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  Container(
+                    child: ElevatedButton(
+                      child:  Text("Checked"),
+                      onPressed:() => {
+                        debuging()
+                      },
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
