@@ -12,6 +12,7 @@ import 'chart/lineChart.dart';
 import 'chart/barChart.dart';
 import 'chart/pieChart.dart';
 import 'mqtt/mqttMangement.dart';
+import './model/mqttMessage.dart';
 
 void main() {
   runApp(const MyApp());
@@ -429,7 +430,7 @@ class MyFormPage extends State<FormPage> {
                       ),
                       Container(
                         width: 110,
-                        margin: EdgeInsets.only(left: 10.0),
+                        margin: EdgeInsets.only(left: 10.0, right: 10.0),
                         child: ElevatedButton(
                           onPressed: () => {
                             Navigator.push(
@@ -914,9 +915,7 @@ class ChartPage extends StatefulWidget {
   MyChagePage createState() => MyChagePage();
 }
 
-
 class MyChagePage extends State<ChartPage> {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -995,26 +994,67 @@ class MqttPage extends StatefulWidget {
 }
 
 class MyMqttPage extends State<MqttPage> {
-  final List<String> arrayMsg = [];
+  // List<MassageModel> message  = message();
+  List arrayMsg = [];
+  final _formKey = GlobalKey<FormState>();
   final String subTopic = 'topic/sub_test';
+  final String pubTopic = "topic/pub_test";
+  final builder = MqttClientPayloadBuilder();
   
+  String messageData = "";
+  // List arrayPushMsg = [];
+
+  var clientMq = mqttConnect();
   @override
   void initState() {
     super.initState();
-    var clientMq = mqttConnect();
     clientMq.then((setClient) => {
-      setClient.subscribe(subTopic, MqttQos.atMostOnce),
-      setClient.updates!.listen((dynamic c) {
-        final recMess = c![0].payload as MqttPublishMessage;
-        final message = MqttPublishPayload.bytesToStringAsString(recMess.payload.message!);
-        // print('message mqtt widget => $message');
-        arrayMsg.add(message);
-      })
+          setClient.subscribe(subTopic, MqttQos.atMostOnce),
+          setClient.updates!.listen((dynamic c) {
+            final recMess = c![0].payload as MqttPublishMessage;
+            final message = MqttPublishPayload.bytesToStringAsString(
+                recMess.payload.message!);
+            // print('message mqtt widget => $message');
+            genMsg('guest: $message');
+            // arrayMsg.add(message);
+          })
+        });
+  }
+
+  void haddleSendMessage() {
+    if (messageData != '') {
+      print('message => $messageData');
+      clientMq.then((setClient) {
+            builder.addString(messageData);
+            setClient.publishMessage(pubTopic, MqttQos.exactlyOnce, builder.payload!);
+            // var setupPayload = {
+            //   'userType': 'sender',
+            //   'message': messageData
+            // };
+            arrayMsg.add('me: $messageData');
+            builder.clear();
+            // client.unsubscribe(pubTopic);
+          });
+      _formKey.currentState!.reset();
+    }
+  }
+
+  void genMsg(String payload) {
+    setState(() {
+      print('adding $payload');
+    
+      // var setupPayload = {
+      //   'userType': 'reciver',
+      //   'message': payload
+      // };
+
+      arrayMsg.add(payload);
     });
   }
 
-  void debuging () {
-    print('array corrector =>  $arrayMsg');
+  void debuging() {
+    print('array sub corrector =>  $arrayMsg');
+    // print('array pub corrector => $arrayPushMsg');
   }
 
   @override
@@ -1033,9 +1073,78 @@ class MyMqttPage extends State<MqttPage> {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
-            Container(),
+            Container(
+              height: 200.0,
+              width: 350.0,
+              margin: EdgeInsets.only(top: 30.0),
+              padding: EdgeInsets.all(15.0),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.blueGrey),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: Column(
+                  children: [
+                    for (var item in arrayMsg)
+                      Align(
+                          alignment: Alignment.centerRight,
+                          child: Container(
+                            child: Text(item),
+                          ),
+                        )
+                      // if(item.userType == 'sender')
+                      //   Align(
+                      //     alignment: Alignment.centerRight,
+                      //     child: Container(
+                      //       child: Text(item),
+                      //     ),
+                      //   )
+                      // else
+                      //   Align(
+                      //     alignment: Alignment.centerLeft,
+                      //     child: Container(
+                      //       child: Text(item),
+                      //     ),
+                      //   )
+                  ],
+                ),
+              ),
+            ),
+            Container(
+              margin: EdgeInsets.only(top: 25.0),
+              width: 300.0,
+              height: 50.0,
+              child: Form(
+                  key: _formKey,
+                  child: TextFormField(
+                    decoration: InputDecoration(
+                      labelText: "Message",
+                      border: OutlineInputBorder(),
+                    ),
+                    initialValue: '',
+                    onSaved: ((value) => setState(
+                          () {
+                            messageData = value!;
+                          },
+                        )),
+                  )),
+            ),
             Container(
               margin: EdgeInsets.only(top: 30.0),
+              
+              child: ElevatedButton(
+                child: Icon(Icons.send),
+                onPressed: () {
+                  if(_formKey.currentState!.validate()){
+                    _formKey.currentState!.save();
+                    haddleSendMessage();
+                  }
+                },
+              ),
+            ),
+            Container(
+              margin: EdgeInsets.only(top: 10.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -1047,13 +1156,19 @@ class MyMqttPage extends State<MqttPage> {
                     ),
                   ),
                   Container(
+                    margin: EdgeInsets.only(right: 10.0, left: 10.0),
                     child: ElevatedButton(
-                      child:  Text("Checked"),
-                      onPressed:() => {
-                        debuging()
-                      },
+                      child: Text("Checked"),
+                      onPressed: () => {debuging()},
                     ),
-                  )
+                  ),
+                  Container(
+                    margin: EdgeInsets.only(left: 10.0),
+                    child: ElevatedButton(
+                      onPressed: (() => {}),
+                      child: Icon(Icons.arrow_forward),
+                    ),
+                  ),
                 ],
               ),
             ),
