@@ -996,12 +996,19 @@ class MqttPage extends StatefulWidget {
 class MyMqttPage extends State<MqttPage> {
   // List<MassageModel> message  = message();
   List arrayMsg = [];
+  List catsList = [];
   final _formKey = GlobalKey<FormState>();
+  final _formKeyCatName =  GlobalKey<FormState>();
+  final _formKeyCatColor = GlobalKey<FormState>();
+
+
   final String subTopic = 'topic/sub_test';
   final String pubTopic = "topic/pub_test";
   final builder = MqttClientPayloadBuilder();
   
   String messageData = "";
+  String catName = "";
+  String catColor = "";
   // List arrayPushMsg = [];
 
   var clientMq = mqttConnect();
@@ -1015,7 +1022,7 @@ class MyMqttPage extends State<MqttPage> {
             final message = MqttPublishPayload.bytesToStringAsString(
                 recMess.payload.message!);
             // print('message mqtt widget => $message');
-            genMsg('guest: $message');
+            genMsg(message);
             // arrayMsg.add(message);
           })
         });
@@ -1031,7 +1038,12 @@ class MyMqttPage extends State<MqttPage> {
             //   'userType': 'sender',
             //   'message': messageData
             // };
-            arrayMsg.add('me: $messageData');
+            // arrayMsg.add('me: $messageData');
+            arrayMsg.add({
+              'type': 'sender',
+              'message': messageData
+            });
+
             builder.clear();
             // client.unsubscribe(pubTopic);
           });
@@ -1048,8 +1060,31 @@ class MyMqttPage extends State<MqttPage> {
       //   'message': payload
       // };
 
-      arrayMsg.add(payload);
+      // arrayMsg.add(payload);
+
+      arrayMsg.add(
+        {
+          'type': 'receiver',
+          'message': payload,
+          
+        }
+      );
     });
+  }
+
+  void onSaveCatData () {
+    catsList.add(
+      {
+        'name': catName,
+        'color': catColor
+      }
+    );
+    print(catsList);
+    // var setCats = Cat.fromJson(catsList);
+    // print('data out name:' + setCats.name + 'color: ' + setCats.color);
+    // catsList.add(setCats);
+    _formKeyCatColor.currentState!.reset();
+    _formKeyCatName.currentState!.reset();
   }
 
   void debuging() {
@@ -1087,30 +1122,98 @@ class MyMqttPage extends State<MqttPage> {
                 child: Column(
                   children: [
                     for (var item in arrayMsg)
-                      Align(
-                          alignment: Alignment.centerRight,
-                          child: Container(
-                            child: Text(item),
-                          ),
-                        )
-                      // if(item.userType == 'sender')
-                      //   Align(
+                      // Align(
                       //     alignment: Alignment.centerRight,
                       //     child: Container(
                       //       child: Text(item),
                       //     ),
                       //   )
-                      // else
-                      //   Align(
-                      //     alignment: Alignment.centerLeft,
-                      //     child: Container(
-                      //       child: Text(item),
-                      //     ),
-                      //   )
+                      if(item['type'] == 'sender')
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Container(
+                            child: Text(item['message']),
+                          ),
+                        )
+                      else
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            child: Text(item['message']),
+                          ),
+                        )
                   ],
                 ),
               ),
             ),
+            // === test form json add in list data === //
+            //  Container(
+            //   margin: EdgeInsets.only(top: 25.0),
+            //   width: 300.0,
+            //   height: 50.0,
+            //   child: Form(
+            //       key: _formKeyCatName,
+            //       child: TextFormField(
+            //         decoration: InputDecoration(
+            //           labelText: "Cat Name",
+            //           border: OutlineInputBorder(),
+            //         ),
+            //         initialValue: '',
+            //         onSaved: ((value) => setState(
+            //               () {
+            //                 catName = value!;
+            //               },
+            //             )),
+            //       )),
+            // ),
+            //  Container(
+            //   margin: EdgeInsets.only(top: 25.0),
+            //   width: 300.0,
+            //   height: 50.0,
+            //   child: Form(
+            //       key: _formKeyCatColor,
+            //       child: TextFormField(
+            //         decoration: InputDecoration(
+            //           labelText: "Cat Color",
+            //           border: OutlineInputBorder(),
+            //         ),
+            //         initialValue: '',
+            //         onSaved: ((value) => setState(
+            //               () {
+            //                 catColor = value!;
+            //               },
+            //             )),
+            //       )),
+            // ),
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.center,
+            //   children: [
+            //     Container(
+            //         child: ElevatedButton(
+            //           child: Text("Check"),
+            //           onPressed: () {
+            //             print('catsList => $catsList');
+            //             for(var item in catsList){
+            //               print(item['name']);
+            //             }
+            //           },
+            //         ),
+            //     ),
+            //     Container(
+            //       child: ElevatedButton(
+            //           child: Text("Save"),
+            //           onPressed: () {
+            //             if(_formKeyCatName.currentState!.validate() && _formKeyCatColor.currentState!.validate()){
+            //               _formKeyCatName.currentState!.save();
+            //               _formKeyCatColor.currentState!.save();
+            //               onSaveCatData();
+            //             }
+            //           },
+            //         ),
+            //     )
+            //   ],
+            // ),
+            // === end test form json add in list data === //
             Container(
               margin: EdgeInsets.only(top: 25.0),
               width: 300.0,

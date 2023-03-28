@@ -1,12 +1,10 @@
-class MassageModel {
-  String senderType;
-  String message;
+class Cat {
+  String name;
+  String color;
+  Cat({required this.name, required this.color});
+  factory Cat.fromJson(Map<String, dynamic> json) {
+ 
+    return Cat(name:json['name'] , color:  json['color']);
 
-  MassageModel({required this.senderType,required this.message });
-  
-  static MassageModel fromJson(json) => MassageModel(
-    senderType: json['senderType'],
-    message: json['message']
-  );
+  }
 }
-
